@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Contracts\BillerInterface;
+use App\Foundations\Biller;
+use App\Repositories\OrderRepository;
+use App\Repositories\OrderRepositoryEloquent;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,7 +18,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        App::bind(OrderRepository::class, OrderRepositoryEloquent::class);
+        App::bind(BillerInterface::class, Biller::class);
     }
 
     /**

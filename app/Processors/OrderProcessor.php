@@ -3,43 +3,48 @@
 namespace App\Processors;
 
 use App\Contracts\BillerInterface;
-use App\Models\Order;
-use Carbon\Carbon;
+use App\Foundations\Order;
+use App\Repositories\OrderRepository;
 use Exception;
-use Illuminate\Support\Facades\DB;
 
-class OrderProcessor {
+class OrderProcessor 
+{
+    private const RECENT_MINUTE = 5;
+
+    private $biller;
+    private $orderRepository;
  
-    public function __construct(BillerInterface $biller)
-    {
+    public function __construct(
+        BillerInterface $biller, 
+        OrderRepository $orderRepository
+    ) {
         $this->biller = $biller;
+        $this->orderRepository = $orderRepository;
     }
 
     public function process(Order $order)
     {
-        $recent = $this->getRecentOrderCount($order);
+        $this->guard($order);
 
-        if ($recent > 0)
-        {
-            throw new Exception('Duplicate order likely.');
-        }
+        $accountId = $order->account->id;
+        $amount = $order->amount;
 
-        $this->biller->bill($order->account->id, $order->amount);
-
-        DB::table('orders')->insert(array(
-            'account'    => $order->account->id,
-            'amount'     => $order->amount,
-            'created_at' => Carbon::now()
-        ));
+        $this->biller->bill($accountId, $amount);
+        $this->orderRepository->create([
+            'account' => $accountId,
+            'amount' => $amount,
+        ]);
     }
 
-    protected function getRecentOrderCount(Order $order)
+    private function guard(Order $order)
     {
-        $timestamp = Carbon::now()->subMinutes(5);
+        $recent = $this->orderRepository->getRecentOrderCount(
+            $order->account->id, 
+            self::RECENT_MINUTE
+        );
 
-        return DB::table('orders')
-            ->where('account', $order->account->id)
-            ->where('created_at', '>=', $timestamp)
-            ->count();
+        if ($recent > 0) {
+            throw new Exception('Duplicate order likely.');
+        }
     }
 }
