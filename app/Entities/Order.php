@@ -2,6 +2,8 @@
 
 namespace App\Entities;
 
+use Database\Factories\OrderFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Prettus\Repository\Contracts\Transformable;
 use Prettus\Repository\Traits\TransformableTrait;
@@ -14,6 +16,7 @@ use Prettus\Repository\Traits\TransformableTrait;
 class Order extends Model implements Transformable
 {
     use TransformableTrait;
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -22,4 +25,8 @@ class Order extends Model implements Transformable
      */
     protected $fillable = [];
 
+    protected static function newFactory()
+    {
+        return OrderFactory::new();
+    }
 }
